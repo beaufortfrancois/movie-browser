@@ -132,8 +132,8 @@ export default {
       this.isLoading = true;
       this.error = null;
       this.movies = []; // Clear previous movies
-
-      try {
+      throw new Error(`omg`);
+      /*try {
         // Get a random page number between 1 and 500 (TMDB API limit)
         const randomPage = Math.floor(Math.random() * 500) + 1;
         
@@ -164,7 +164,7 @@ export default {
         this.error = "Failed to load random movie. Please try again later.";
       } finally {
         this.isLoading = false;
-      }
+      }*/
     }
   } // methods object closes here
 }; // export default closes here
