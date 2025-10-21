@@ -1,7 +1,11 @@
 <template>
-  <div id="app">
+  <div id="app" :class="theme">
     <header>
       <h1>Movie Browser</h1>
+      <button @click="toggleTheme" class="theme-toggle" :title="`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`">
+        <span v-if="theme === 'light'">🌙</span>
+        <span v-else>☀️</span>
+      </button>
     </header>
     <main>
       <div class="filters-container">
@@ -74,10 +78,12 @@ export default {
       },
       selectedMovie: null,
       showDetailModal: false,
-      apiKey: process.env.VUE_APP_TMDB_API_KEY
+      apiKey: process.env.VUE_APP_TMDB_API_KEY,
+      theme: 'light' // Default theme
     };
   },
   async created() {
+    this.loadTheme();
     await this.fetchMovies();
   },
   methods: {
@@ -136,24 +142,24 @@ export default {
       try {
         // Get a random page number between 1 and 500 (TMDB API limit)
         const randomPage = Math.floor(Math.random() * 500) + 1;
-        
+
         // Fetch movies from a random page
         const url = `https://api.themoviedb.org/3/discover/movie?api_key=${this.apiKey}&language=en-US&page=${randomPage}&sort_by=popularity.desc&vote_count.gte=100`;
-        
+
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         if (data && data.results && data.results.length > 0) {
           // Pick a random movie from the results
           const randomIndex = Math.floor(Math.random() * data.results.length);
           const randomMovie = data.results[randomIndex];
-          
+
           // Set the single random movie as the movies array
           this.movies = [randomMovie];
-          
+
           // Optionally open the detail modal immediately
           this.openDetailModal(randomMovie);
         } else {
@@ -165,31 +171,105 @@ export default {
       } finally {
         this.isLoading = false;
       }
+    },
+    loadTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        this.theme = savedTheme;
+      }
+    },
+    toggleTheme() {
+      this.theme = this.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', this.theme);
     }
   } // methods object closes here
 }; // export default closes here
 </script>
 
 <style>
+/* CSS Variables for Light Theme */
+#app.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-header: #42b983;
+  --text-primary: #2c3e50;
+  --text-secondary: #333;
+  --text-header: white;
+  --border-color: #ccc;
+  --card-bg: #ffffff;
+  --modal-bg: white;
+  --button-primary: #42b983;
+  --button-primary-hover: #36a471;
+  --button-secondary: #e74c3c;
+  --button-secondary-hover: #c0392b;
+  --input-bg: white;
+  --input-border: #ccc;
+}
+
+/* CSS Variables for Dark Theme */
+#app.dark {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-header: #2d5a47;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-header: white;
+  --border-color: #444;
+  --card-bg: #2d2d2d;
+  --modal-bg: #2d2d2d;
+  --button-primary: #42b983;
+  --button-primary-hover: #36a471;
+  --button-secondary: #e74c3c;
+  --button-secondary-hover: #c0392b;
+  --input-bg: #3a3a3a;
+  --input-border: #555;
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header {
-  background-color: #42b983;
-  color: white;
+  background-color: var(--bg-header);
+  color: var(--text-header);
   padding: 20px;
   margin-bottom: 20px;
+  position: relative;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 1.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
 }
 
 .filters-container {
   margin-bottom: 20px;
   padding: 15px;
-  background-color: #f9f9f9;
+  background-color: var(--bg-secondary);
   border-radius: 8px;
   display: flex;
   flex-wrap: nowrap; /* Bug: Force items onto one line */
@@ -197,9 +277,10 @@ header {
   justify-content: flex-start; /* Align items to the start for clearer overflow */
   align-items: center;
   max-width: 450px;
-  overflow-x: auto; 
+  overflow-x: auto;
   margin-left: auto; /* Center the container itself */
   margin-right: auto; /* Center the container itself */
+  transition: background-color 0.3s ease;
 }
 
 .filter-group {
@@ -212,43 +293,49 @@ header {
   margin-bottom: 5px;
   font-weight: bold;
   font-size: 0.9em;
+  color: var(--text-primary);
 }
 
 .filter-group select,
 .filter-group input[type="number"] {
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .apply-filters-button {
   padding: 10px 20px;
-  background-color: #42b983;
+  background-color: var(--button-primary);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1em;
   align-self: flex-end; /* Aligns button with bottom of other inputs if they wrap */
+  transition: background-color 0.3s ease;
 }
 
 .apply-filters-button:hover {
-  background-color: #36a471;
+  background-color: var(--button-primary-hover);
 }
 
 .random-movie-button {
   padding: 10px 20px;
-  background-color: #e74c3c;
+  background-color: var(--button-secondary);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1em;
   align-self: flex-end;
+  transition: background-color 0.3s ease;
 }
 
 .random-movie-button:hover {
-  background-color: #c0392b;
+  background-color: var(--button-secondary-hover);
 }
 
 .movie-list-container {
@@ -285,15 +372,16 @@ header {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--modal-bg);
   padding: 30px;
   border-radius: 8px;
   width: 90%;
   max-width: 600px;
   max-height: 250px;
-  overflow-y: hidden; 
+  overflow-y: hidden;
   position: relative;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease;
 }
 
 .modal-close-button {
@@ -304,7 +392,8 @@ header {
   border: none;
   font-size: 1.8em;
   cursor: pointer;
-  color: #333;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .modal-poster {
@@ -318,12 +407,12 @@ header {
 
 .modal-content h2 {
   margin-top: 0;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .modal-content p {
   line-height: 1.6;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .movie-overview {
