@@ -4,10 +4,10 @@
       <h1>Movie Browser</h1>
     </header>
     <main>
-      <div class="filters-container">
+      <form class="filters-container" toolname="apply-movie-filters" tooldescription="Applies filters to the movie list. Use this to sort movies or filter by minimum rating." @submit.prevent="handleFilterSubmit">
         <div class="filter-group">
           <label for="sort-by">Sort By:</label>
-          <select id="sort-by" v-model="filters.sortBy">
+          <select id="sort-by" v-model="filters.sortBy" name="sortBy">
             <option value="popularity.desc">Popularity (Desc)</option>
             <option value="popularity.asc">Popularity (Asc)</option>
             <option value="release_date.desc">Release Date (Desc)</option>
@@ -18,11 +18,17 @@
         </div>
         <div class="filter-group">
           <label for="min-rating">Min Rating (0-10):</label>
-          <input type="number" id="min-rating" v-model.number="filters.minRating" min="0" max="10" step="0.1">
+          <input type="number" id="min-rating" v-model.number="filters.minRating" name="minRating" min="0" max="10" step="0.1">
         </div>
-        <button @click="applyFilters" class="apply-filters-button">Apply Filters</button>
-        <button @click="getRandomMovie" class="random-movie-button">Random Movie</button>
-      </div>
+        <button type="submit" class="apply-filters-button">Apply Filters</button>
+        <button type="button" @click="getRandomMovie" class="random-movie-button">Random Movie</button>
+      </form>
+
+      <!-- Hidden form for WebMCP to open modal by ID -->
+      <form toolname="open-movie-detail-modal" tooldescription="Opens the movie detail modal for a specific movie currently visible in the list." @submit.prevent="handleOpenModalSubmit" style="display: none;">
+        <input type="number" name="movieId" required>
+        <button type="submit">Submit</button>
+      </form>
 
       <div v-if="isLoading" class="loading-message">Loading movies...</div>
       <div v-if="error" class="error-message">{{ error }}</div>
@@ -42,7 +48,9 @@
        <!-- Movie Detail Modal -->
       <div v-if="showDetailModal && selectedMovie" class="modal-overlay" @click.self="closeDetailModal">
         <div class="modal-content">
-          <button class="modal-close-button" @click="closeDetailModal">&times;</button>
+          <form toolname="close-movie-detail-modal" tooldescription="Closes the currently open movie detail modal." @submit.prevent="closeDetailModal" style="display: inline;">
+            <button type="submit" class="modal-close-button">&times;</button>
+          </form>
           <h2>{{ selectedMovie.title }}</h2>
           <img :src="selectedMovie.poster_path ? 'https://image.tmdb.org/t/p/w300' + selectedMovie.poster_path : 'https://via.placeholder.com/300x450?text=No+Image'" :alt="selectedMovie.title + ' poster'" class="modal-poster" v-if="selectedMovie.poster_path">
           <p><strong>Release Date:</strong> {{ selectedMovie.release_date }}</p>
@@ -74,13 +82,32 @@ export default {
       },
       selectedMovie: null,
       showDetailModal: false,
-      apiKey: process.env.VUE_APP_TMDB_API_KEY
+      apiKey: process.env.VUE_APP_TMDB_API_KEY,
+      abortController: null
     };
   },
   async created() {
     await this.fetchMovies();
   },
   methods: {
+    handleFilterSubmit(event) {
+      const formData = new FormData(event.target);
+      const sortBy = formData.get('sortBy');
+      const minRating = formData.get('minRating');
+      if (sortBy) this.filters.sortBy = sortBy;
+      if (minRating !== null && minRating !== '') this.filters.minRating = parseFloat(minRating);
+      this.applyFilters();
+    },
+    handleOpenModalSubmit(event) {
+      const formData = new FormData(event.target);
+      const movieId = parseInt(formData.get('movieId'), 10);
+      const movie = this.movies.find(m => m.id === movieId);
+      if (movie) {
+        this.openDetailModal(movie);
+      } else {
+        console.warn(`Movie with ID ${movieId} not found.`);
+      }
+    },
     async fetchMovies() {
       this.isLoading = true;
       this.error = null;
