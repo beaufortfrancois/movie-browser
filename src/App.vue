@@ -4,7 +4,7 @@
       <h1>Movie Browser</h1>
     </header>
     <main>
-      <form class="filters-container" toolname="apply-movie-filters" tooldescription="Applies filters to the movie list. Use this to sort movies or filter by minimum rating." @submit.prevent="handleFilterSubmit">
+      <form class="filters-container" toolname="apply-movie-filters" tooldescription="Applies filters to the movie list. Use this to sort movies or filter by minimum rating." toolautosubmit @submit.prevent="handleFilterSubmit">
         <div class="filter-group">
           <label for="sort-by">Sort By:</label>
           <select id="sort-by" v-model="filters.sortBy" name="sortBy">
@@ -25,7 +25,7 @@
       </form>
 
       <!-- Hidden form for WebMCP to open modal by ID -->
-      <form toolname="open-movie-detail-modal" tooldescription="Opens the movie detail modal for a specific movie currently visible in the list." @submit.prevent="handleOpenModalSubmit" style="display: none;">
+      <form toolname="open-movie-detail-modal" tooldescription="Opens the movie detail modal for a specific movie currently visible in the list." @submit.prevent="handleOpenModalSubmit" toolautosubmit style="display: none;">
         <input type="number" name="movieId" required>
         <button type="submit">Submit</button>
       </form>
@@ -48,7 +48,7 @@
        <!-- Movie Detail Modal -->
       <div v-if="showDetailModal && selectedMovie" class="modal-overlay" @click.self="closeDetailModal">
         <div class="modal-content">
-          <form toolname="close-movie-detail-modal" tooldescription="Closes the currently open movie detail modal." @submit.prevent="closeDetailModal" style="display: inline;">
+          <form toolname="close-movie-detail-modal" tooldescription="Closes the currently open movie detail modal." @submit.prevent="closeDetailModal" toolautosubmit style="display: inline;">
             <button type="submit" class="modal-close-button">&times;</button>
           </form>
           <h2>{{ selectedMovie.title }}</h2>
